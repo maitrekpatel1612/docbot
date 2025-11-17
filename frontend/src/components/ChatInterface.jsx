@@ -7,7 +7,23 @@ import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-export function ChatInterface({ messages, onFilesDropped }) {
+const getProgressRingStyle = (progress) => {
+    const safeProgress = Math.min(Math.max(progress || 0, 0), 100);
+    const angle = safeProgress * 3.6;
+    return {
+        background: `conic-gradient(rgba(16,185,129,0.9) 0deg, rgba(16,185,129,0.9) ${angle}deg, rgba(255,255,255,0.08) ${angle}deg, rgba(255,255,255,0.08) 360deg)`,
+        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 4px))',
+        mask: 'radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 4px))'
+    };
+};
+
+const statusCopy = {
+    uploading: 'Embedding in progress',
+    completed: 'Ready to query',
+    error: 'Upload failed'
+};
+
+export function ChatInterface({ messages, onFilesDropped, uploadPreviews = [] }) {
     const messagesEndRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -54,7 +70,35 @@ export function ChatInterface({ messages, onFilesDropped }) {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
-            <div className="h-full overflow-y-auto px-6 py-6">
+            <div className="h-full overflow-y-auto px-6 py-6 space-y-6">
+                {uploadPreviews.length > 0 && (
+                    <div className="space-y-3">
+                        {uploadPreviews.map((preview) => (
+                            <div
+                                key={preview.id}
+                                className="relative flex items-center gap-4 rounded-[28px] border border-white/10 bg-black/50 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.65)] backdrop-blur"
+                            >
+                                <div className="relative">
+                                    <div className="absolute inset-[-6px] rounded-[22px] opacity-70" style={getProgressRingStyle(preview.progress || 0)} />
+                                    <div className="relative z-10 h-14 w-14 rounded-[18px] border border-white/10 bg-white/5 flex items-center justify-center text-emerald-200">
+                                        <span className="text-sm font-semibold">{(preview.name || 'Doc').slice(0, 2).toUpperCase()}</span>
+                                    </div>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-white truncate">{preview.name}</p>
+                                    <p className="text-xs text-gray-400">
+                                        {statusCopy[preview.status] || 'Processing'}
+                                        {preview.status === 'uploading' && ` • ${preview.progress || 0}%`}
+                                    </p>
+                                </div>
+                                <span className={`text-xs font-semibold uppercase ${preview.status === 'error' ? 'text-red-300' : 'text-emerald-200'}`}>
+                                    {preview.status === 'uploading' ? `${preview.progress || 0}%` : preview.status}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {messages.length === 0 ? (
                     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center text-gray-400">
                         <div className="mb-4 rounded-3xl border border-white/10 bg-white/5 p-6">

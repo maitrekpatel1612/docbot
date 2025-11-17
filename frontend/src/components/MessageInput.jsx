@@ -19,7 +19,7 @@ export function MessageInput({ onSend, isLoading, disabled, onUploadClick, uploa
     return (
         <div className="space-y-3">
             {uploadedFiles && uploadedFiles.length > 0 && (
-                <div className="flex gap-3 overflow-x-auto pb-1 pr-1">
+                <div className="flex gap-3 overflow-x-auto pb-1 pr-1 no-scrollbar">
                     {uploadedFiles.map((file, index) => (
                         <div
                             key={index}

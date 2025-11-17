@@ -8,8 +8,62 @@ function App() {
   const [hasDocuments, setHasDocuments] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [notification, setNotification] = useState(null);
+  const [uploadStatuses, setUploadStatuses] = useState([]);
   const { messages, isLoading, error, sendMessage, clearMessages } = useChat();
   const { clearCurrentSession } = useSession();
+
+  const generateUploadId = () =>
+    (typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+  const createUploadEntries = (files) =>
+    files.map((file) => ({
+      id: generateUploadId(),
+      name: file.name,
+      type: file.type,
+      progress: 0,
+      status: 'uploading'
+    }));
+
+  const updateUploadProgress = (entryIds, progress) => {
+    setUploadStatuses((prev) =>
+      prev.map((entry) =>
+        entryIds.includes(entry.id)
+          ? { ...entry, progress }
+          : entry
+      )
+    );
+  };
+
+  const scheduleUploadRemoval = (entryIds, delay) => {
+    setTimeout(() => {
+      setUploadStatuses((prev) => prev.filter((entry) => !entryIds.includes(entry.id)));
+    }, delay);
+  };
+
+  const finalizeUploadStatus = (entryIds, status) => {
+    setUploadStatuses((prev) =>
+      prev.map((entry) =>
+        entryIds.includes(entry.id)
+          ? {
+              ...entry,
+              status,
+              progress: status === 'completed' ? 100 : entry.progress,
+              completedAt: Date.now()
+            }
+          : entry
+      )
+    );
+
+    if (status === 'completed') {
+      scheduleUploadRemoval(entryIds, 2000);
+    }
+
+    if (status === 'error') {
+      scheduleUploadRemoval(entryIds, 5000);
+    }
+  };
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
@@ -21,6 +75,7 @@ function App() {
       clearMessages();
       setHasDocuments(false);
       setUploadedFiles([]);
+      setUploadStatuses([]);
       await clearCurrentSession();
       showNotification('Started a fresh chat session', 'success');
     } catch (error) {
@@ -32,19 +87,48 @@ function App() {
     try {
       const { uploadFiles } = await import('./services/api');
       const fileArray = Array.from(files);
+      if (fileArray.length === 0) return;
+
       const MAX_FILES_PER_BATCH = 10;
+      const uploadEntries = createUploadEntries(fileArray);
+      setUploadStatuses((prev) => [...prev, ...uploadEntries]);
 
       const batches = [];
+      const entryBatches = [];
       for (let i = 0; i < fileArray.length; i += MAX_FILES_PER_BATCH) {
         batches.push(fileArray.slice(i, i + MAX_FILES_PER_BATCH));
+        entryBatches.push(uploadEntries.slice(i, i + MAX_FILES_PER_BATCH));
       }
 
-      const uploadResponses = await Promise.all(batches.map(batch => uploadFiles(batch)));
+      const uploadPromises = batches.map((batch, index) => {
+        const ids = entryBatches[index].map((entry) => entry.id);
+        return uploadFiles(batch, {
+          onUploadProgress: (event) => {
+            if (!event.total) return;
+            const percent = Math.round((event.loaded / event.total) * 100);
+            updateUploadProgress(ids, percent);
+          }
+        })
+          .then((response) => {
+            finalizeUploadStatus(ids, 'completed');
+            return response;
+          })
+          .catch((err) => {
+            finalizeUploadStatus(ids, 'error');
+            throw err;
+          });
+      });
+
+      const settledResponses = await Promise.allSettled(uploadPromises);
+      const successfulResponses = settledResponses
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => result.value);
+      const failedResponses = settledResponses.filter((result) => result.status === 'rejected');
 
       let uploadedNames = [];
       let totalFilesProcessed = 0;
 
-      uploadResponses.forEach((response) => {
+      successfulResponses.forEach((response) => {
         if (response.success && response.data) {
           totalFilesProcessed += response.data.fileCount || 0;
           if (Array.isArray(response.data.files)) {
@@ -52,6 +136,10 @@ function App() {
           }
         }
       });
+
+      if (failedResponses.length > 0) {
+        showNotification('Some documents failed to upload', 'error');
+      }
 
       if (totalFilesProcessed > 0) {
         setHasDocuments(true);
@@ -64,7 +152,6 @@ function App() {
   };
 
   const handleUploadClick = () => {
-    // Trigger file input click
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
@@ -96,13 +183,15 @@ function App() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.08),transparent_55%)]" />
       </div>
 
-      {/* Slim App Bar */}
-      <header className="fixed top-0 left-0 right-0 z-30 border-b border-white/10 bg-black/80 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <span className="text-xs font-semibold uppercase tracking-[0.4em] text-emerald-200">DocBot</span>
+      <header className="fixed top-0 left-0 right-0 z-30 border-b border-white/10 bg-black/10 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8 py-8">
+          <div className="inline-flex items-center gap-3 rounded-full border border-emerald-400/40 bg-gradient-to-r from-white/5 to-emerald-500/5 px-5 py-3 text-xs font-bold uppercase tracking-[0.45em] text-emerald-100 shadow-[0_10px_35px_rgba(0,0,0,0.35)]">
+    
+            <spa>DocBot</spa>
+          </div>
           <button
             onClick={handleNewChat}
-            className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-4 py-1 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-emerald-500/30"
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-emerald-400/50 bg-gradient-to-r from-emerald-500/20 to-green-500/20 px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-emerald-500/30"
           >
             <span>New Chat</span>
             <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +201,6 @@ function App() {
         </div>
       </header>
 
-      {/* Notification */}
       {notification && (
         <div className="fixed top-6 right-6 z-50 animate-slide-in">
           <div
@@ -127,10 +215,8 @@ function App() {
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="relative z-10 px-4 pb-10 pt-24 sm:px-6 lg:px-8 space-y-6">
+      <main className="relative z-10 px-4 pb-40 pt-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl min-h-[calc(100vh-200px)]">
-          {/* Chat Console */}
           <section className="glass-panel relative flex min-h-[70vh] flex-col overflow-hidden">
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute right-10 top-16 h-40 w-40 rounded-full bg-emerald-500/10 blur-3xl animate-float-slowest" />
@@ -139,6 +225,7 @@ function App() {
               <ChatInterface
                 messages={messages}
                 onFilesDropped={handleFilesDropped}
+                uploadPreviews={uploadStatuses}
               />
               {error && (
                 <div className="absolute top-4 right-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-200 shadow-lg">
@@ -148,7 +235,9 @@ function App() {
             </div>
           </section>
         </div>
+      </main>
 
+      <div className="fixed bottom-0 left-0 right-0 z-30  px-4 py-4 sm:px-6 lg:px-8 backdrop-blur">
         <div className="mx-auto w-full max-w-6xl rounded-[32px] border border-white/5 bg-black/70 p-4 shadow-[0_20px_80px_rgba(0,0,0,0.45)]">
           <MessageInput
             onSend={sendMessage}
@@ -159,7 +248,7 @@ function App() {
             onRemoveFile={handleRemoveFile}
           />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

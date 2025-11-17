@@ -136,7 +136,7 @@ class RagService {
             const modelWrapper = this.createModelWrapper(model);
 
             // Create retriever from vector store
-            const retriever = session.vectorStore.asRetriever({ k: 3 });
+            const retriever = session.vectorStore.asRetriever({ k: 6 });
 
             // Create prompt template
             const prompt = PromptTemplate.fromTemplate(`

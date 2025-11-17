@@ -34,8 +34,8 @@ class VectorStoreService {
      */
     async splitDocuments(documents) {
         const splitter = new RecursiveCharacterTextSplitter({
-            chunkSize: 1000,
-            chunkOverlap: 200
+            chunkSize: 600,
+            chunkOverlap: 150
         });
 
         const chunks = await splitter.splitDocuments(documents);

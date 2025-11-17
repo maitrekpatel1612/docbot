@@ -18,19 +18,24 @@ const api = axios.create({
 /**
  * Upload files
  * @param {FileList|File[]} files - Files to upload
+ * @param {Object} options - Additional axios options
  * @returns {Promise} Upload response
  */
-export const uploadFiles = async (files) => {
+export const uploadFiles = async (files, options = {}) => {
     const formData = new FormData();
     
     Array.from(files).forEach(file => {
         formData.append('files', file);
     });
 
+    const { headers: extraHeaders, ...restOptions } = options;
+
     const response = await api.post('/upload', formData, {
         headers: {
-            'Content-Type': 'multipart/form-data'
-        }
+            'Content-Type': 'multipart/form-data',
+            ...(extraHeaders || {})
+        },
+        ...restOptions
     });
 
     return response.data;
