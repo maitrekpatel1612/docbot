@@ -77,21 +77,29 @@ class RagService {
     async processDocuments(sessionId, filePaths) {
         try {
             console.log(`Processing ${filePaths.length} documents for session ${sessionId}`);
-            
+
             // Load all documents
             const documents = await loadMultipleDocuments(filePaths);
-            
+
             if (documents.length === 0) {
                 throw new Error('No documents could be loaded');
             }
 
-            // Create vector store
-            const vectorStore = await vectorStoreService.createVectorStore(documents);
-            
+            const session = sessionService.getSession(sessionId);
+            let vectorStore;
+
+            if (session?.vectorStore) {
+                vectorStore = await vectorStoreService.addDocumentsToStore(session.vectorStore, documents);
+            } else {
+                vectorStore = await vectorStoreService.createVectorStore(documents);
+            }
+
+            const combinedFiles = [...(session?.uploadedFiles || []), ...filePaths];
+
             // Update session with vector store and full file paths
             sessionService.updateSession(sessionId, { 
                 vectorStore,
-                uploadedFiles: filePaths // Store full paths for cleanup
+                uploadedFiles: combinedFiles // Store full paths for cleanup
             });
 
             return {
