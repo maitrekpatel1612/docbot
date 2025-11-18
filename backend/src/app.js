@@ -39,8 +39,9 @@ app.use(helmet({
 }));
 
 // CORS configuration
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: FRONTEND_URL,
     credentials: true
 }));
 
@@ -88,7 +89,7 @@ app.use(errorHandler);
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    
+
     // Start session cleanup service
     sessionService.startCleanupService();
     console.log('Session cleanup service started');
