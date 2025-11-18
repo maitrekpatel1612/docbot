@@ -4,6 +4,8 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
 
 class SessionService {
     constructor() {
@@ -90,6 +92,26 @@ class SessionService {
             
             // Return uploaded files for cleanup
             const uploadedFiles = session.uploadedFiles || [];
+            
+            // Delete uploaded files from filesystem
+            if (uploadedFiles.length > 0) {
+                const uploadDir = path.join(process.cwd(), 'uploads');
+                
+                uploadedFiles.forEach(filePath => {
+                    try {
+                        const fullPath = path.isAbsolute(filePath) 
+                            ? filePath 
+                            : path.join(uploadDir, filePath);
+                        
+                        if (fs.existsSync(fullPath)) {
+                            fs.unlinkSync(fullPath);
+                            console.log(`Deleted file: ${fullPath}`);
+                        }
+                    } catch (err) {
+                        console.error(`Error deleting file ${filePath}:`, err);
+                    }
+                });
+            }
             
             this.sessions.delete(sessionId);
             console.log(`Cleared session: ${sessionId}`);

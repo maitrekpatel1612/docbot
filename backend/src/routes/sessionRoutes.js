@@ -3,7 +3,7 @@
  */
 
 import express from 'express';
-import { getSessionInfo, clearSession, healthCheck } from '../controllers/sessionController.js';
+import { getSessionInfo, clearSession, healthCheck, cleanupSession } from '../controllers/sessionController.js';
 
 const router = express.Router();
 
@@ -12,6 +12,9 @@ router.get('/', getSessionInfo);
 
 // DELETE /api/session - Clear session
 router.delete('/', clearSession);
+
+// POST /api/session/cleanup - Cleanup session files on browser close
+router.post('/cleanup', cleanupSession);
 
 // GET /api/health - Health check
 router.get('/health', healthCheck);

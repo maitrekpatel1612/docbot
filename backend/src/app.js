@@ -35,15 +35,51 @@ const PORT = process.env.PORT || 5000;
 
 // Security middleware
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
 }));
 
-// CORS configuration
+// CORS configuration - More permissive for development and file uploads
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    FRONTEND_URL
+];
+
+// In production, also allow common development origins for testing
+if (isDevelopment) {
+    allowedOrigins.push('http://localhost:3000', 'http://localhost:5000');
+}
+
+// Remove duplicates
+const uniqueOrigins = [...new Set(allowedOrigins)];
+
 app.use(cors({
-    origin: FRONTEND_URL,
-    credentials: true
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, Postman)
+        if (!origin) return callback(null, true);
+        
+        if (uniqueOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('Origin not allowed by CORS:', origin);
+            // In development, allow all origins for testing
+            callback(null, isDevelopment ? true : false);
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id', 'X-Requested-With'],
+    exposedHeaders: ['X-Session-Id'],
+    maxAge: 86400 // 24 hours
 }));
+
+// Handle preflight requests explicitly
+app.options('*', cors());
 
 // Body parsers
 app.use(express.json());
@@ -61,8 +97,13 @@ app.use(session({
     }
 }));
 
-// Initialize session middleware
-app.use(initializeSession);
+// Apply session middleware to all routes except cleanup (cleanup is called during page unload)
+app.use((req, res, next) => {
+    if (req.path === '/api/session/cleanup') {
+        return next();
+    }
+    initializeSession(req, res, next);
+});
 
 // Routes
 app.use('/api/upload', uploadRoutes);
