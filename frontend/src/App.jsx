@@ -57,7 +57,7 @@ function App() {
     );
 
     if (status === 'completed') {
-      scheduleUploadRemoval(entryIds, 2000);
+      scheduleUploadRemoval(entryIds, 500); // Reduced from 2000ms to 500ms
     }
 
     if (status === 'error') {
@@ -202,9 +202,9 @@ function App() {
       </header>
 
       {notification && (
-        <div className="fixed top-6 right-6 z-50 animate-slide-in">
+        <div className="fixed top-20 sm:top-6 left-4 right-4 sm:left-auto sm:right-6 z-50 animate-slide-in">
           <div
-            className={`px-5 py-3 rounded-2xl backdrop-blur-2xl border shadow-2xl text-sm ${
+            className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl backdrop-blur-2xl border shadow-2xl text-xs sm:text-sm ${
               notification.type === 'success'
                 ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-100'
                 : 'bg-red-500/15 border-red-400/30 text-red-100'
@@ -215,7 +215,7 @@ function App() {
         </div>
       )}
 
-      <main className="relative z-10 px-4 pb-40 pt-24 sm:px-6 lg:px-8">
+      <main className="relative z-10 px-2 sm:px-4 pb-32 sm:pb-36 md:pb-40 pt-20 sm:pt-24 lg:px-8">
         <div className="mx-auto max-w-6xl min-h-[calc(100vh-200px)]">
           <section className="glass-panel relative flex min-h-[70vh] flex-col overflow-hidden">
             <div className="pointer-events-none absolute inset-0">
@@ -226,6 +226,7 @@ function App() {
                 messages={messages}
                 onFilesDropped={handleFilesDropped}
                 uploadPreviews={uploadStatuses}
+                hasDocuments={hasDocuments || uploadedFiles.length > 0}
               />
               {error && (
                 <div className="absolute top-4 right-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-200 shadow-lg">
@@ -237,8 +238,8 @@ function App() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-30  px-4 py-4 sm:px-6 lg:px-8 backdrop-blur">
-        <div className="mx-auto w-full max-w-6xl rounded-[32px] border border-white/5 bg-black/70 p-4 shadow-[0_20px_80px_rgba(0,0,0,0.45)]">
+      <div className="fixed bottom-0 left-0 right-0 z-30 px-2 py-2 sm:px-4 sm:py-4 md:px-6 lg:px-8 backdrop-blur">
+        <div className="mx-auto w-full max-w-6xl rounded-2xl sm:rounded-[32px] border border-white/5 bg-black/70 p-2 sm:p-3 md:p-4 shadow-[0_20px_80px_rgba(0,0,0,0.45)]">
           <MessageInput
             onSend={sendMessage}
             isLoading={isLoading}

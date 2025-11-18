@@ -23,7 +23,7 @@ const statusCopy = {
     error: 'Upload failed'
 };
 
-export function ChatInterface({ messages, onFilesDropped, uploadPreviews = [] }) {
+export function ChatInterface({ messages, onFilesDropped, uploadPreviews = [], hasDocuments = false }) {
     const messagesEndRef = useRef(null);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -70,36 +70,36 @@ export function ChatInterface({ messages, onFilesDropped, uploadPreviews = [] })
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
-            <div className="h-full overflow-y-auto px-6 py-6 space-y-6">
+            <div className="h-full overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
                 {uploadPreviews.length > 0 && (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                         {uploadPreviews.map((preview) => (
                             <div
                                 key={preview.id}
-                                className="relative flex items-center gap-4 rounded-[28px] border border-white/10 bg-black/50 p-4 shadow-[0_25px_60px_rgba(0,0,0,0.65)] backdrop-blur"
+                                className="relative flex items-center gap-2 sm:gap-4 rounded-2xl sm:rounded-[28px] border border-white/10 bg-black/50 p-3 sm:p-4 shadow-[0_25px_60px_rgba(0,0,0,0.65)] backdrop-blur"
                             >
-                                <div className="relative">
-                                    <div className="absolute inset-[-6px] rounded-[22px] opacity-70" style={getProgressRingStyle(preview.progress || 0)} />
-                                    <div className="relative z-10 h-14 w-14 rounded-[18px] border border-white/10 bg-white/5 flex items-center justify-center text-emerald-200">
-                                        <span className="text-sm font-semibold">{(preview.name || 'Doc').slice(0, 2).toUpperCase()}</span>
+                                <div className="relative flex-shrink-0">
+                                    <div className="absolute inset-[-4px] sm:inset-[-6px] rounded-[18px] sm:rounded-[22px] opacity-70" style={getProgressRingStyle(preview.progress || 0)} />
+                                    <div className="relative z-10 h-12 w-12 sm:h-14 sm:w-14 rounded-[16px] sm:rounded-[18px] border border-white/10 bg-white/5 flex items-center justify-center text-emerald-200">
+                                        <span className="text-xs sm:text-sm font-semibold">{(preview.name || 'Doc').slice(0, 2).toUpperCase()}</span>
                                     </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-white truncate">{preview.name}</p>
-                                    <p className="text-xs text-gray-400">
+                                    <p className="text-xs sm:text-sm font-semibold text-white truncate">{preview.name}</p>
+                                    <p className="text-[10px] sm:text-xs text-gray-400">
                                         {statusCopy[preview.status] || 'Processing'}
-                                        {preview.status === 'uploading' && ` • ${preview.progress || 0}%`}
+                                        {preview.status === 'uploading' && ` • ${Math.round(preview.progress || 0)}%`}
                                     </p>
                                 </div>
-                                <span className={`text-xs font-semibold uppercase ${preview.status === 'error' ? 'text-red-300' : 'text-emerald-200'}`}>
-                                    {preview.status === 'uploading' ? `${preview.progress || 0}%` : preview.status}
+                                <span className={`text-[10px] sm:text-xs font-semibold uppercase flex-shrink-0 ${preview.status === 'error' ? 'text-red-300' : 'text-emerald-200'}`}>
+                                    {preview.status === 'uploading' ? `${Math.round(preview.progress || 0)}%` : preview.status}
                                 </span>
                             </div>
                         ))}
                     </div>
                 )}
 
-                {messages.length === 0 ? (
+                {messages.length === 0 && !hasDocuments && uploadPreviews.length === 0 ? (
                     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center text-gray-400">
                         <div className="mb-4 rounded-3xl border border-white/10 bg-white/5 p-6">
                             <svg className="mx-auto h-10 w-10 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,6 +107,16 @@ export function ChatInterface({ messages, onFilesDropped, uploadPreviews = [] })
                             </svg>
                             <p className="mt-3 text-base font-semibold text-white">Start the conversation</p>
                             <p className="text-xs text-gray-500">Drag & drop your documents into this chat to begin.</p>
+                        </div>
+                    </div>
+                ) : messages.length === 0 && (hasDocuments || uploadPreviews.length > 0) ? (
+                    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center text-gray-400">
+                        <div className="mb-4 rounded-3xl border border-emerald-400/20 bg-emerald-500/5 p-6">
+                            <svg className="mx-auto h-10 w-10 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="mt-3 text-base font-semibold text-white">Documents Ready!</p>
+                            <p className="text-xs text-gray-500">Ask questions about your uploaded documents below.</p>
                         </div>
                     </div>
                 ) : (

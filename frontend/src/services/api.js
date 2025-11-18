@@ -50,13 +50,14 @@ export const uploadFiles = async (files, options = {}) => {
         formData.append('files', file);
     });
 
-    const { headers: extraHeaders, ...restOptions } = options;
+    const { headers: extraHeaders, onUploadProgress, ...restOptions } = options;
 
     const response = await api.post('/upload', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
             ...(extraHeaders || {})
         },
+        onUploadProgress: onUploadProgress,
         ...restOptions
     });
 
