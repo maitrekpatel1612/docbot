@@ -71,6 +71,9 @@ export function clearSession(req, res, next) {
             // Create new session
             const newSessionId = sessionService.createSession();
             req.session.ragSessionId = newSessionId;
+            
+            // Send new session ID to client
+            res.setHeader('X-Session-Id', newSessionId);
 
             res.json({
                 success: true,

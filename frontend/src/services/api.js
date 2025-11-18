@@ -15,6 +15,28 @@ const api = axios.create({
     }
 });
 
+// Add interceptor to include session ID from localStorage
+api.interceptors.request.use((config) => {
+    const sessionId = localStorage.getItem('ragSessionId');
+    if (sessionId) {
+        config.headers['X-Session-Id'] = sessionId;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
+// Add interceptor to store session ID from response
+api.interceptors.response.use((response) => {
+    const sessionId = response.headers['x-session-id'];
+    if (sessionId) {
+        localStorage.setItem('ragSessionId', sessionId);
+    }
+    return response;
+}, (error) => {
+    return Promise.reject(error);
+});
+
 /**
  * Upload files
  * @param {FileList|File[]} files - Files to upload
