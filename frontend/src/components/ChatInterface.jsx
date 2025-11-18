@@ -128,22 +128,22 @@ export function ChatInterface({ messages, onFilesDropped, uploadPreviews = [], h
                         return (
                             <div key={key} className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-message-pop`}>
                                 <div
-                                    className={`relative max-w-[80%] rounded-3xl px-4 py-3 text-sm shadow-[0_15px_45px_rgba(0,0,0,0.45)] transition-all ${
+                                    className={`relative max-w-[85%] sm:max-w-[80%] rounded-2xl sm:rounded-3xl px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm shadow-[0_15px_45px_rgba(0,0,0,0.45)] transition-all ${
                                         isUser
                                             ? 'bg-gradient-to-br from-emerald-400 to-green-500 text-black'
                                             : 'bg-white/5 border border-white/10 backdrop-blur'
                                     }`}
                                 >
-                                    <div className="flex items-start gap-3">
-                                        <div className={`w-7 h-7 rounded-2xl flex items-center justify-center ${
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                        <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 ${
                                             isUser ? 'bg-white/30 text-black' : 'bg-emerald-500/20 text-emerald-200'
                                         }`}>
                                             {isUser ? (
-                                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                                 </svg>
                                             ) : (
-                                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="currentColor" viewBox="0 0 20 20">
                                                     <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                                                     <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
                                                 </svg>
@@ -151,15 +151,15 @@ export function ChatInterface({ messages, onFilesDropped, uploadPreviews = [], h
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             {isUser ? (
-                                                <p className="whitespace-pre-wrap break-words leading-relaxed text-sm">{message.content}</p>
+                                                <p className="whitespace-pre-wrap break-words leading-relaxed text-xs sm:text-sm">{message.content}</p>
                                             ) : (
-                                                <div className="markdown-content text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
+                                                <div className="markdown-content text-xs sm:text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
                                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                         {message.content}
                                                     </ReactMarkdown>
                                                 </div>
                                             )}
-                                            <p className={`text-[10px] mt-2 ${isUser ? 'text-black/70' : 'text-gray-400'}`}>
+                                            <p className={`text-[9px] sm:text-[10px] mt-1.5 sm:mt-2 ${isUser ? 'text-black/70' : 'text-gray-400'}`}>
                                                 {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         </div>

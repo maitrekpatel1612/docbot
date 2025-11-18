@@ -89,6 +89,19 @@ function App() {
       const fileArray = Array.from(files);
       if (fileArray.length === 0) return;
 
+      // Validate file sizes (10MB limit)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+      const oversizedFiles = fileArray.filter(file => file.size > MAX_FILE_SIZE);
+      
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map(f => f.name).join(', ');
+        showNotification(
+          `File(s) too large: ${fileNames}. Maximum size is 10MB per file.`,
+          'error'
+        );
+        return;
+      }
+
       const MAX_FILES_PER_BATCH = 10;
       const uploadEntries = createUploadEntries(fileArray);
       setUploadStatuses((prev) => [...prev, ...uploadEntries]);
